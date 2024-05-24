@@ -27,4 +27,15 @@ public class CommonConstant {
     //Redis键常量
     public static final String REDIS_FOLLOW_KEY = "follows:";
     public static final String REDIS_FAN_KEY = "fan:";
+
+
+    //OSS存储
+    public static final String OSS_MUSIC = "music";
+    public static final String OSS_WORDS = "words";
+
+    public static final String OSS_FORMAT_MP3 = ".mp3";
+    public static final String OSS_FORMAT_TXT = ".txt";
+
+    // 文件保存地址
+    public static final String LOCAL_SAVE_ADDRESS = "C:\\Desktop\\";
 }
