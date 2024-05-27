@@ -1,12 +1,10 @@
 package com.czh.chbackend.interceptor;
 
-import com.czh.chbackend.constant.CommonConstant;
+import com.czh.chbackend.common.CommonConstant;
 import com.czh.chbackend.utils.JwtUtil;
 import com.czh.chbackend.utils.UserContext;
-import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;

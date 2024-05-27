@@ -12,6 +12,7 @@ public enum ErrorCode {
 
     SUCCESS(200, "ok"),
     ERROR_CODE(20200,"重复操作"),
+    ALREADY_EXIST(20300,"已存在"),
     PARAMS_ERROR(40000, "请求参数错误"),
     NOT_LOGIN_ERROR(40100, "未登录"),
     NOT_REGISTER_ERROR(40102, "未注册"),

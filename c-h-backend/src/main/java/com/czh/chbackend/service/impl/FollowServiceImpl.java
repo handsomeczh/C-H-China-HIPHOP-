@@ -9,9 +9,9 @@ import com.czh.chbackend.common.PageResult;
 import com.czh.chbackend.mapper.FollowMapper;
 import com.czh.chbackend.model.entity.Follow;
 import com.czh.chbackend.service.IFollowService;
-import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 /**
  * @author czh

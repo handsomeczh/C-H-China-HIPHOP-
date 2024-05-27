@@ -11,11 +11,11 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Autowired
     private JwtInterceptor jwtInterceptor;
-
+//  todo 记得开启拦截器
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
-                .addPathPatterns("/user/**") // Customize the URL patterns to intercept
+                .addPathPatterns("/**") // 拦截所有路径
                 .excludePathPatterns("/user/login/**","/register","loginByCode","/getCode/**"); // Exclude specific paths if neede
 
     }

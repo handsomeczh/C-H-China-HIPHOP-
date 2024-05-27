@@ -2,10 +2,8 @@ package com.czh.chbackend.aliyun;// This file is auto-generated, don't edit it. 
 
 import cn.hutool.core.util.RandomUtil;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
-import com.aliyun.tea.*;
+import com.aliyun.tea.TeaException;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class SendSmsUtils {

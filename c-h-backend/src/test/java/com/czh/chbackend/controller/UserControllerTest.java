@@ -1,13 +1,10 @@
 package com.czh.chbackend.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.czh.chbackend.common.PageRequest;
 import com.czh.chbackend.common.PageResult;
-import com.czh.chbackend.common.Result;
 import com.czh.chbackend.model.entity.Follow;
 import com.czh.chbackend.model.vo.FanOrFollowVo;
 import com.czh.chbackend.service.IFollowService;
-import com.czh.chbackend.utils.UserContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,8 +15,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.czh.chbackend.constant.CommonConstant.REDIS_FOLLOW_KEY;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.czh.chbackend.common.CommonConstant.REDIS_FOLLOW_KEY;
 
 /**
  * @author czh

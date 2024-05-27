@@ -1,29 +1,30 @@
 package com.czh.chbackend.controller;
 
-import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.czh.chbackend.aliyun.SendSmsUtils;
 import com.czh.chbackend.common.PageRequest;
 import com.czh.chbackend.common.PageResult;
 import com.czh.chbackend.common.Result;
-import com.czh.chbackend.constant.CommonConstant;
 import com.czh.chbackend.mapper.FollowMapper;
 import com.czh.chbackend.model.dto.user.UserLoginRequest;
 import com.czh.chbackend.model.dto.user.UserRegisterRequest;
 import com.czh.chbackend.model.dto.user.UserUpdateRequest;
 import com.czh.chbackend.model.entity.Follow;
+import com.czh.chbackend.model.entity.Playlist;
 import com.czh.chbackend.model.entity.User;
 import com.czh.chbackend.model.vo.FanOrFollowVo;
 import com.czh.chbackend.service.IFollowService;
+import com.czh.chbackend.service.IPlaylistService;
 import com.czh.chbackend.service.IUserService;
 import com.czh.chbackend.utils.JwtUtil;
 import com.czh.chbackend.utils.PasswordUtil;
 import com.czh.chbackend.utils.UserContext;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,16 +32,8 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
-
-import javax.crypto.SecretKey;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import static com.czh.chbackend.common.ErrorCode.*;
-import static com.czh.chbackend.constant.CommonConstant.*;
+import static com.czh.chbackend.common.CommonConstant.*;
 
 /**
  * 用户
@@ -63,6 +56,9 @@ public class UserController {
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private IPlaylistService playlistService;
 
     /**
      * 注册用户:获取验证码
@@ -126,6 +122,8 @@ public class UserController {
         }
         // 删除验证码缓存
         redisTemplate.delete(newPhone);
+        // 创建收藏歌单
+        createCollectionList(user.getId());
         return Result.success();
     }
 
@@ -136,17 +134,17 @@ public class UserController {
     public Result<String> login(@RequestBody UserLoginRequest loginUser) {
         String userPassword = loginUser.getUserPassword();
         String userIphone = loginUser.getUserIphone();
-        if(loginUser == null || userPassword == null || userIphone == null){
-            return Result.error(PARAMS_ERROR,"电话或密码不能为空");
+        if (loginUser == null || userPassword == null || userIphone == null) {
+            return Result.error(PARAMS_ERROR, "电话或密码不能为空");
         }
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserIphone, userIphone));
-        if(user == null){
-            return Result.error(NOT_REGISTER_ERROR,"用户未注册");
+        if (user == null) {
+            return Result.error(NOT_REGISTER_ERROR, "用户未注册");
         }
 
         String password = user.getUserPassword();
-        if(!PasswordUtil.verifyWithoutSalt(userPassword,password)){
-            return Result.error(PASSWORD_ERROR,"密码错误");
+        if (!PasswordUtil.verifyWithoutSalt(userPassword, password)) {
+            return Result.error(PASSWORD_ERROR, "密码错误");
         }
         // 将用户存入线程中
         Long userId = user.getId();
@@ -158,7 +156,7 @@ public class UserController {
      * 用户登录：获取验证码
      */
     @GetMapping("/login/{phone}")
-    public Result<String> getLoginCode(@PathVariable String phone){
+    public Result<String> getLoginCode(@PathVariable String phone) {
         if (phone == null) {
             return Result.error(PARAMS_ERROR, "电话号码不能为空");
         }
@@ -187,15 +185,15 @@ public class UserController {
      * 用户登录：验证码登录
      */
     @GetMapping("/loginByCode")
-    public Result loginByCode(@RequestBody UserLoginRequest loginUser){
+    public Result loginByCode(@RequestBody UserLoginRequest loginUser) {
         String loginCode = loginUser.getCode();
         String loginPhone = loginUser.getUserIphone();
-        if(loginUser == null || loginCode == null || loginPhone == null){
-            return Result.error(PARAMS_ERROR,"电话或密码不能为空");
+        if (loginUser == null || loginCode == null || loginPhone == null) {
+            return Result.error(PARAMS_ERROR, "电话或密码不能为空");
         }
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserIphone, loginPhone));
-        if(user == null){
-            return Result.error(NOT_REGISTER_ERROR,"用户未注册");
+        if (user == null) {
+            return Result.error(NOT_REGISTER_ERROR, "用户未注册");
         }
         // 获取验证码
         String code = redisTemplate.opsForValue().get(loginPhone);
@@ -226,7 +224,7 @@ public class UserController {
         BeanUtils.copyProperties(updateUser, user);
         // 如果存在密码对密码进行加密
         String password = user.getUserPassword();
-        if(password != null){
+        if (password != null) {
             String pw = PasswordUtil.encryptWithoutSalt(password);
             user.setUserPassword(pw);
         }
@@ -241,18 +239,18 @@ public class UserController {
      * 获取用户关注列表
      */
     @GetMapping("/follow")
-    public Result<PageResult> getFollow(@RequestBody PageRequest pageRequest){
+    public Result<PageResult> getFollow(@RequestBody PageRequest pageRequest) {
         Long userId = UserContext.getCurrentId();
         // key
-        String key = REDIS_FOLLOW_KEY+userId;
+        String key = REDIS_FOLLOW_KEY + userId;
         HashOperations<String, Object, Object> forHash = redisTemplate.opsForHash();
         // 从Redis中获取数据
         List<FanOrFollowVo> list = forHash.values(key).stream().map(obj -> JSONUtil.toBean((String) obj, FanOrFollowVo.class)).collect(Collectors.toList());
-        if(list != null && !list.isEmpty()){
-            return Result.success(new PageResult(list.size(),list));
+        if (list != null && !list.isEmpty()) {
+            return Result.success(new PageResult(list.size(), list));
         }
         // 缓存不存在从数据库获取
-        PageResult pageResult = followService.getFollow(pageRequest,userId);
+        PageResult pageResult = followService.getFollow(pageRequest, userId);
         List<Follow> records = pageResult.getRecords();
         // 数据处理
         List<FanOrFollowVo> follows = records.stream().map(entity -> {
@@ -261,7 +259,7 @@ public class UserController {
                     vo.setUserName(entity.getFollowName());
                     vo.setUserAvatar(entity.getFollowAvatar());
                     // 存入Redis
-                    forHash.put(key,String.valueOf(entity.getFollowId()), JSONUtil.toJsonStr(vo));
+                    forHash.put(key, String.valueOf(entity.getFollowId()), JSONUtil.toJsonStr(vo));
                     return vo;
                 })
                 .collect(Collectors.toList());
@@ -286,8 +284,8 @@ public class UserController {
             return Result.error(PARAMS_ERROR, "用户不存在");
         }
         // 判断是否已经关注
-        if(followMapper.exists(new LambdaQueryWrapper<Follow>().eq(Follow::getFollowId, other.getId()))){
-            return Result.error(OPERATION_ERROR,"用户已关注");
+        if (followMapper.exists(new LambdaQueryWrapper<Follow>().eq(Follow::getFollowId, other.getId()))) {
+            return Result.error(OPERATION_ERROR, "用户已关注");
         }
         // 获取当前用户
         Long userId = UserContext.getCurrentId();
@@ -299,7 +297,7 @@ public class UserController {
             throw new RuntimeException(OPERATION_ERROR.getMessage());
         }
         // key
-        String key = REDIS_FOLLOW_KEY+ userId;
+        String key = REDIS_FOLLOW_KEY + userId;
         redisTemplate.delete(key);
         return Result.success();
     }
@@ -319,7 +317,7 @@ public class UserController {
                 .eq(Follow::getFanId, fanId)
                 .eq(Follow::getFollowId, followId));
         // key
-        String key = REDIS_FOLLOW_KEY+ fanId;
+        String key = REDIS_FOLLOW_KEY + fanId;
         redisTemplate.delete(key);
         return Result.success();
     }
@@ -328,18 +326,18 @@ public class UserController {
      * 获取用户粉丝列表
      */
     @GetMapping("/fan")
-    public Result getFan(@RequestBody PageRequest pageRequest){
+    public Result<PageResult> getFan(@RequestBody PageRequest pageRequest) {
         Long userId = UserContext.getCurrentId();
         // key
-        String key = REDIS_FAN_KEY+userId;
+        String key = REDIS_FAN_KEY + userId;
         HashOperations<String, Object, Object> forHash = redisTemplate.opsForHash();
         // 从Redis中获取数据
         List<FanOrFollowVo> list = forHash.values(key).stream().map(obj -> JSONUtil.toBean((String) obj, FanOrFollowVo.class)).collect(Collectors.toList());
-        if(list != null && !list.isEmpty()){
-            return Result.success(new PageResult(list.size(),list));
+        if (list != null && !list.isEmpty()) {
+            return Result.success(new PageResult(list.size(), list));
         }
         // 从数据库获取
-        PageResult pageResult = followService.getFan(pageRequest,userId);
+        PageResult pageResult = followService.getFan(pageRequest, userId);
         List<Follow> records = pageResult.getRecords();
         // 数据处理
         List<FanOrFollowVo> fans = records.stream().map(entity -> {
@@ -348,7 +346,7 @@ public class UserController {
                     vo.setUserName(entity.getFanName());
                     vo.setUserAvatar(entity.getFanAvatar());
                     // 存入Redis
-                    forHash.put(key,String.valueOf(entity.getFanId()), JSONUtil.toJsonStr(vo));
+                    forHash.put(key, String.valueOf(entity.getFanId()), JSONUtil.toJsonStr(vo));
                     return vo;
                 })
                 .collect(Collectors.toList());
@@ -374,9 +372,21 @@ public class UserController {
                 .eq(Follow::getFanId, fanId)
                 .eq(Follow::getFollowId, followId));
         // key
-        String key = REDIS_FOLLOW_KEY+ followId;
+        String key = REDIS_FOLLOW_KEY + followId;
         redisTemplate.delete(key);
         return Result.success();
+    }
+
+    /**
+     * 创建收藏歌单
+     * @param userId
+     */
+    private void createCollectionList(Long userId) {
+        Playlist playlist = new Playlist();
+        playlist.setUserId(userId);
+        playlist.setListImage("");
+        playlist.setName(REDIS_COLLECTION_PLAYLIST + userId);
+        playlistService.save(playlist);
     }
 
 }

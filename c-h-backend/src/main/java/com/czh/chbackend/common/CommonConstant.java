@@ -1,4 +1,4 @@
-package com.czh.chbackend.constant;
+package com.czh.chbackend.common;
 
 import java.util.regex.Pattern;
 
@@ -28,14 +28,28 @@ public class CommonConstant {
     public static final String REDIS_FOLLOW_KEY = "follows:";
     public static final String REDIS_FAN_KEY = "fan:";
 
+    public static final String REDIS_MUSIC_KEY = "music:";
+    public static final String REDIS_WORDS_KEY = "words:";
+
 
     //OSS存储
     public static final String OSS_MUSIC = "music";
     public static final String OSS_WORDS = "words";
 
     public static final String OSS_FORMAT_MP3 = ".mp3";
-    public static final String OSS_FORMAT_TXT = ".txt";
+    public static final String OSS_FORMAT_LRC = ".lrc";
 
     // 文件保存地址
     public static final String LOCAL_SAVE_ADDRESS = "C:\\Desktop\\";
+
+    // 歌单
+    public static final String REDIS_COLLECTION_PLAYLIST = "收藏";
+    public static final String REDIS_PLAYLIST = "歌单";
+
+    // 热门评论
+    public static final String REDIS_HOT_COMMENTS = "hot_comments:";
+    public static final String REDIS_NEW_COMMENTS = "new_comments:";
+
+    // 回复
+    public static final String REDIS_REPLY_KEY = "reply:";
 }

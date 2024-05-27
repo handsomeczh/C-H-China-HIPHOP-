@@ -2,7 +2,7 @@ package com.czh.chbackend.common;
 
 import lombok.Data;
 
-import static com.czh.chbackend.constant.CommonConstant.SORT_ORDER_ASC;
+import static com.czh.chbackend.common.CommonConstant.SORT_ORDER_ASC;
 
 /**
  */

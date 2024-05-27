@@ -1,12 +1,8 @@
 package com.czh.chbackend.service.impl;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.czh.chbackend.common.PageRequest;
-import com.czh.chbackend.common.PageResult;
-import com.czh.chbackend.model.entity.Follow;
-import com.czh.chbackend.model.entity.User;
 import com.czh.chbackend.mapper.UserMapper;
+import com.czh.chbackend.model.entity.User;
 import com.czh.chbackend.service.IUserService;
 import org.springframework.stereotype.Service;
 
