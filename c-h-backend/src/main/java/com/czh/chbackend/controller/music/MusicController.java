@@ -1,5 +1,7 @@
-package com.czh.chbackend.controller;
+package com.czh.chbackend.controller.music;
 
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.aliyuncs.exceptions.ClientException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -10,6 +12,7 @@ import com.czh.chbackend.model.dto.music.MusicDownloadRequest;
 import com.czh.chbackend.model.dto.music.MusicSearchRequest;
 import com.czh.chbackend.model.dto.music.MusicUploadRequest;
 import com.czh.chbackend.model.entity.Music;
+import com.czh.chbackend.model.vo.DownloadMusicVo;
 import com.czh.chbackend.model.vo.UrlVo;
 import com.czh.chbackend.service.IMusicService;
 import io.netty.util.internal.StringUtil;
@@ -20,6 +23,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -85,24 +89,18 @@ public class MusicController {
     }
 
     /**
-     * 下载音乐
-     * todo 默认了下载路径，目前暂不支持自定义。默认路径：桌面
+     *  下载音乐
+     * todo 默认了下载路径，目前暂不支持自定义。默认路径：C:\c_h_music\
      */
-    @PostMapping("/download")
-    public Result download(@RequestBody MusicDownloadRequest request) {
-        String artist = request.getArtist();
-        String songName = request.getSongName();
-        if (artist == null || songName == null) {
-            return Result.error(PARAMS_ERROR, "作家和歌曲不能为空");
-        }
-        // 判断该歌曲是否存在
-        boolean exists = musicService.exists(new LambdaQueryWrapper<Music>().eq(Music::getArtist, artist).eq(Music::getSongName, songName));
-        if (!exists) {
-            return Result.error(PARAMS_ERROR, "歌曲不存在");
+    @PostMapping("/download/{id}")
+    public Result download(@PathVariable Long id) {
+        Music music = musicService.getById(id);
+        if(ObjectUtil.isEmpty(music)){
+            return Result.error(PARAMS_ERROR,"歌曲不存在");
         }
         // 从OSS下载歌曲
         try {
-            OssUtil.downLoad(songName, OSS_MUSIC, OSS_FORMAT_MP3);
+            OssUtil.downLoad(music.getSongName(), OSS_MUSIC, OSS_FORMAT_MP3);
         } catch (ClientException e) {
             return Result.error(OPERATION_ERROR, "歌曲下载失败");
         }
@@ -125,14 +123,6 @@ public class MusicController {
         return Result.success();
     }
 
-//    /**
-//     * 获取音乐列表
-//     */
-//    @GetMapping("/musicList")
-//    public Result<PageResult> getMusicList(@RequestBody PageRequest request){
-//        return Result.success(musicService.getMusicList(request));
-//    }
-
     /**
      * 根据歌名、歌手搜索音乐,没有时则全搜索,支持模糊搜索
      * todo 可以实现缓存
@@ -141,7 +131,6 @@ public class MusicController {
     public Result<PageResult> search(@RequestBody MusicSearchRequest request) {
         return Result.success(musicService.getMusicList(request));
     }
-
 
     /**
      * 获取音乐的临时URL：用于在线播放,支持显示歌词,返回
@@ -245,13 +234,44 @@ public class MusicController {
     }
 
     /**
-     * 热歌推荐
+     * 已下载音乐
+     * 默认读取本地缓存 C:\c_h_music\
+     * todo 暂且不使用Redis缓存，必要性不高
+     */
+    @GetMapping("/downloaded")
+    public Result<List<DownloadMusicVo>> downloaded(String path){
+        if(StrUtil.isBlank(path)){
+            path = DOWNLOAD_MUSIC_DIRECTORY;
+        }
+        // 创建一个集合存储音乐文件路径 DownLoadMusicVo todo 为解决显示问题(图片，歌名等)
+        ArrayList<DownloadMusicVo> vos = new ArrayList<>();
+        // 读取指定目录下的 .mp3 文件
+        File directory = new File(DOWNLOAD_MUSIC_DIRECTORY);
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles((dir, name) -> name.toLowerCase().endsWith(".mp3"));
+            if (files != null) {
+                for (File file : files) {
+                    vos.add(DownloadMusicVo.builder()
+                            .songName(file.getName())
+                            .path(file.getAbsolutePath())
+                            .build());
+                }
+            }
+        } else {
+            return Result.error(NOT_FOUND_ERROR,"本地文件C:\\c_h_music\\不存在！");
+        }
+        return Result.success(vos);
+    }
+
+    /**
+     * todo 热歌推荐
      */
     @PostMapping("/hot")
     public Result<List> hot(){
         return Result.success();
     }
 
+    // region 私有方法 isMp3File isLrcFile
 
     /**
      * 判断路径文件是否存在，并且是否为MP3格式
@@ -301,5 +321,5 @@ public class MusicController {
         return file.length();
     }
 
-
+    // endregion
 }

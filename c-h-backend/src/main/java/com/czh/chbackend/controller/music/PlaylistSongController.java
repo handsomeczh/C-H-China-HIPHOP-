@@ -1,4 +1,4 @@
-package com.czh.chbackend.controller;
+package com.czh.chbackend.controller.music;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;

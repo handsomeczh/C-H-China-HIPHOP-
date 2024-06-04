@@ -1,4 +1,4 @@
-package com.czh.chbackend.controller;
+package com.czh.chbackend.controller.user;
 
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -6,16 +6,15 @@ import com.czh.chbackend.aliyun.SendSmsUtils;
 import com.czh.chbackend.common.PageRequest;
 import com.czh.chbackend.common.PageResult;
 import com.czh.chbackend.common.Result;
+import com.czh.chbackend.controller.music.PlaylistController;
 import com.czh.chbackend.mapper.FollowMapper;
 import com.czh.chbackend.model.dto.user.UserLoginRequest;
 import com.czh.chbackend.model.dto.user.UserRegisterRequest;
 import com.czh.chbackend.model.dto.user.UserUpdateRequest;
 import com.czh.chbackend.model.entity.Follow;
-import com.czh.chbackend.model.entity.Playlist;
 import com.czh.chbackend.model.entity.User;
 import com.czh.chbackend.model.vo.FanOrFollowVo;
 import com.czh.chbackend.service.IFollowService;
-import com.czh.chbackend.service.IPlaylistService;
 import com.czh.chbackend.service.IUserService;
 import com.czh.chbackend.utils.JwtUtil;
 import com.czh.chbackend.utils.PasswordUtil;
@@ -31,6 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
+
+import javax.annotation.Resource;
 
 import static com.czh.chbackend.common.ErrorCode.*;
 import static com.czh.chbackend.common.CommonConstant.*;
@@ -57,8 +58,8 @@ public class UserController {
     @Autowired
     private StringRedisTemplate redisTemplate;
 
-    @Autowired
-    private IPlaylistService playlistService;
+    @Resource
+    private PlaylistController playlistController;
 
     /**
      * 注册用户:获取验证码
@@ -122,8 +123,8 @@ public class UserController {
         }
         // 删除验证码缓存
         redisTemplate.delete(newPhone);
-        // 创建收藏歌单
-        createCollectionList(user.getId());
+        // 创建收藏歌单+下载歌单
+        playlistController.createInitPlaylist(user.getId());
         return Result.success();
     }
 
@@ -377,17 +378,7 @@ public class UserController {
         return Result.success();
     }
 
-    /**
-     * 创建收藏歌单
-     * @param userId
-     */
-    private void createCollectionList(Long userId) {
-        Playlist playlist = new Playlist();
-        playlist.setUserId(userId);
-        playlist.setListImage("");
-        playlist.setName(REDIS_COLLECTION_PLAYLIST + userId);
-        playlistService.save(playlist);
-    }
+
 
 }
 

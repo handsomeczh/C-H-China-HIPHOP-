@@ -3,6 +3,7 @@ package com.czh.chbackend.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.czh.chbackend.model.entity.CommentLike;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
  * <p>
@@ -12,6 +13,7 @@ import com.czh.chbackend.model.entity.CommentLike;
  * @author czh
  * @since 2024-05-27
  */
+@Mapper
 public interface CommentLikesMapper extends BaseMapper<CommentLike> {
 
 }

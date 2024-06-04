@@ -37,7 +37,7 @@ public class Follow implements Serializable {
     private String fanAvatar;
 
 
-    @ApiModelProperty("关注用户名")
+    @ApiModelProperty("名")
     private String followName;
 
     @ApiModelProperty("关注用户头像")

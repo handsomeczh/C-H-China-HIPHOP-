@@ -13,6 +13,8 @@ import com.aliyuncs.exceptions.ClientException;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
 
 import static com.czh.chbackend.common.CommonConstant.LOCAL_SAVE_ADDRESS;
@@ -103,7 +105,7 @@ public class OssUtil {
             InputStream content = ossObject.getObjectContent();
             if (content != null) {
                 // 创建本地文件输出流
-                OutputStream outputStream = new FileOutputStream(LOCAL_SAVE_ADDRESS + fileName + format);
+                OutputStream outputStream = Files.newOutputStream(Paths.get(LOCAL_SAVE_ADDRESS + fileName + format));
                 BufferedInputStream bufferedInputStream = new BufferedInputStream(content);
                 byte[] buffer = new byte[1024];
                 int bytesRead;

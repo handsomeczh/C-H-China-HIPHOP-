@@ -17,7 +17,7 @@ import lombok.Data;
  * @author czh
  * @since 2024-05-27
  */
-@TableName("reply")
+@TableName("replies")
 @ApiModel(value = "Replies对象", description = "音乐评论回复表")
 @Data
 public class Reply implements Serializable {

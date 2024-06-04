@@ -1,6 +1,7 @@
-package com.czh.chbackend.controller;
+package com.czh.chbackend.controller.music;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -10,7 +11,6 @@ import com.czh.chbackend.model.dto.playlist.*;
 import com.czh.chbackend.model.entity.Music;
 import com.czh.chbackend.model.entity.Playlist;
 import com.czh.chbackend.model.entity.PlaylistSong;
-import com.czh.chbackend.model.vo.FanOrFollowVo;
 import com.czh.chbackend.service.IMusicService;
 import com.czh.chbackend.service.IPlaylistService;
 import com.czh.chbackend.service.IPlaylistSongService;
@@ -19,15 +19,14 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.czh.chbackend.common.CommonConstant.REDIS_PLAYLIST;
-import static com.czh.chbackend.common.CommonConstant.REDIS_COLLECTION_PLAYLIST;
+import static com.czh.chbackend.common.CommonConstant.*;
 import static com.czh.chbackend.common.ErrorCode.*;
 
 /**
@@ -79,6 +78,11 @@ public class PlaylistController {
         if (!exists) {
             return Result.error(ALREADY_EXIST, "歌单不存在");
         }
+        // 歌单判断
+        Playlist playlist = isInitPlaylist(id);
+        if (JSONUtil.isNull(playlist)) {
+            return Result.error(OPERATION_ERROR, "不能删除初始化歌单");
+        }
         playlistService.removeById(id);
         return Result.success();
     }
@@ -95,9 +99,9 @@ public class PlaylistController {
             return Result.error(ALREADY_EXIST, "歌单存在");
         }
         // 歌单判断
-        Playlist playlist = isCollectionList(request.getId());
+        Playlist playlist = isInitPlaylist(request.getId());
         if (JSONUtil.isNull(playlist)) {
-            return Result.error(OPERATION_ERROR, "不能更新收藏歌单");
+            return Result.error(OPERATION_ERROR, "不能更新初始化歌单");
         }
 
         BeanUtil.copyProperties(request, playlist);
@@ -127,8 +131,8 @@ public class PlaylistController {
         // 判断是否已经添加
         if (
                 playlistSongService.exists(new LambdaQueryWrapper<PlaylistSong>().eq(PlaylistSong::getPlaylistId, request.getPlaylistId())
-                        .eq(PlaylistSong::getSongId, request.getSongId()))){
-            return Result.error(ALREADY_EXIST,"歌曲也存在");
+                        .eq(PlaylistSong::getSongId, request.getSongId()))) {
+            return Result.error(ALREADY_EXIST, "歌曲也存在");
         }
         PlaylistSong playlistSong = new PlaylistSong();
         BeanUtil.copyProperties(request, playlistSong);
@@ -189,17 +193,49 @@ public class PlaylistController {
         return Result.success(new PageResult(listSongs.size(), listSongs));
     }
 
+
+
+
+    //region 私有方法
+
     /**
-     * 判断是不是收藏歌单,并返回歌单对象
+     * 判断是不是初始化歌单,并返回歌单对象
      * 收藏歌单命名：收藏+userId
      * 是返回歌单对象，不是返回null；
      */
-    private Playlist isCollectionList(Long id) {
+    private Playlist isInitPlaylist(Long id) {
         Playlist playlist = playlistService.getById(id);
-        if (JSONUtil.isNull(playlist) || playlist.getName().equals(REDIS_COLLECTION_PLAYLIST + UserContext.getCurrentId())) {
+        Long userId = UserContext.getCurrentId();
+        if (JSONUtil.isNull(playlist) ||
+                playlist.getName().equals(REDIS_COLLECTION_PLAYLIST + userId) ||
+                        playlist.getName().equals(REDIS_DOWNLOAD_PLAYLIST + userId)
+                ) {
             return null;
         }
         return playlist;
     }
+
+    // endregion
+
+
+    //region 可被调用的方法
+
+    /**
+     * 创建收藏歌单
+     */
+    public void createInitPlaylist(Long userId) {
+        // 收藏歌单
+        Playlist playlist = new Playlist();
+        playlist.setUserId(userId);
+        playlist.setListImage("");
+        playlist.setDescription("收藏歌单");
+        playlist.setName(REDIS_COLLECTION_PLAYLIST + userId);
+        playlistService.save(playlist);
+        // 已下载歌单
+        playlist.setDescription("已下载歌单");
+        playlist.setName(REDIS_DOWNLOAD_PLAYLIST + userId);
+        playlistService.save(playlist);
+    }
+    // endregion
 
 }

@@ -33,8 +33,8 @@ logging:
 #  file:
 #    name:
 #    path:
-  pattern:
-    console: %d{yyyy-MM-dd} [%thread] %-5level %logger{50} - %msg%n
+#  pattern:
+#    console: %d{yyyy-MM-dd} [%thread] %-5level %logger{50} - %msg%n
 #    file: %d{yyyy-MM-dd} === [%thread] === %-5level === %logger{50} ==== %msg%n
 
 

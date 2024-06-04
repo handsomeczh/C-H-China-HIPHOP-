@@ -8,7 +8,6 @@ import com.czh.chbackend.common.PageResult;
 import com.czh.chbackend.mapper.CommentsMapper;
 import com.czh.chbackend.model.dto.comment.CommentPageRequest;
 import com.czh.chbackend.model.entity.Comment;
-import com.czh.chbackend.model.entity.Music;
 import com.czh.chbackend.service.ICommentsService;
 import org.springframework.stereotype.Service;
 

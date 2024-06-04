@@ -20,6 +20,6 @@ public class CommentPageRequest extends PageRequest implements Serializable {
     private Long songId;
 
     // 排序字段
-    private Boolean isNew;
+    private Boolean isNew = false;
 
 }

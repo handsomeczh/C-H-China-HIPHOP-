@@ -1,4 +1,4 @@
-package com.czh.chbackend.controller;
+package com.czh.chbackend.controller.music;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
@@ -10,7 +10,10 @@ import com.czh.chbackend.model.dto.comment.CommentAddRequest;
 import com.czh.chbackend.model.dto.comment.CommentPageRequest;
 import com.czh.chbackend.model.dto.reply.ReplyAddRequest;
 import com.czh.chbackend.model.dto.reply.ReplyPageRequest;
-import com.czh.chbackend.model.entity.*;
+import com.czh.chbackend.model.entity.Comment;
+import com.czh.chbackend.model.entity.CommentLike;
+import com.czh.chbackend.model.entity.Music;
+import com.czh.chbackend.model.entity.Reply;
 import com.czh.chbackend.service.ICommentLikesService;
 import com.czh.chbackend.service.ICommentsService;
 import com.czh.chbackend.service.IMusicService;
@@ -29,7 +32,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.czh.chbackend.common.CommonConstant.*;
-import static com.czh.chbackend.common.ErrorCode.*;
+import static com.czh.chbackend.common.ErrorCode.ALREADY_EXIST;
+import static com.czh.chbackend.common.ErrorCode.PARAMS_ERROR;
 
 /**
  * 音乐评论前端控制器
@@ -37,8 +41,8 @@ import static com.czh.chbackend.common.ErrorCode.*;
  * @author czh
  * @since 2024-05-27
  */
-@Controller
-@RequestMapping("/system/comments")
+@RestController
+@RequestMapping("/music/comments")
 public class CommentsController {
     @Autowired
     private ICommentsService commentService;
@@ -92,7 +96,7 @@ public class CommentsController {
         } else {
             key = REDIS_HOT_COMMENTS + request.getSongId();
         }
-        List<Comment> comments = ops.pop(key, ops.size(key)).stream().map(obj -> BeanUtil.toBean(obj, Comment.class)).collect(Collectors.toList());
+        List<Comment> comments = ops.members(key).stream().map(obj -> JSONUtil.toBean(obj, Comment.class)).collect(Collectors.toList());
         if (comments != null && !comments.isEmpty()) {
             return Result.success(new PageResult(comments.size(), comments));
         }
@@ -192,12 +196,12 @@ public class CommentsController {
     }
 
     /**
-     * 评论回复
+     * 音乐评论回复
      */
     @PostMapping("/reply/add")
     public Result addReply(@RequestBody ReplyAddRequest request) {
         // 判断该评论是否存在
-        if (!repliesService.exists(new LambdaQueryWrapper<Reply>().eq(Reply::getCommentId, request.getCommentId()))) {
+        if (!commentService.exists(new LambdaQueryWrapper<Comment>().eq(Comment::getId, request.getCommentId()))) {
             return Result.error(PARAMS_ERROR, "评论不存在");
         }
         if (StringUtil.isNullOrEmpty(request.getContent())) {
@@ -211,19 +215,19 @@ public class CommentsController {
     }
 
     /**
-     * 获取评论回复
+     * 获取音乐评论回复
      */
-    @GetMapping("/reply/{commentId}")
+    @GetMapping("/reply/")
     public Result<PageResult> getRepliesByCommentId(@RequestBody ReplyPageRequest request) {
         // 判断该评论是否存在
-        if (!repliesService.exists(new LambdaQueryWrapper<Reply>().eq(Reply::getCommentId, request.getCommentId()))) {
+        if (!commentService.exists(new LambdaQueryWrapper<Comment>().eq(Comment::getId, request.getCommentId()))) {
             return Result.error(PARAMS_ERROR, "评论不存在");
         }
         //从Redis获取
         SetOperations<String, String> ops = redisTemplate.opsForSet();
         String key= REDIS_REPLY_KEY + request.getCommentId();
 
-        List<Reply> replies = ops.pop(key, ops.size(key)).stream().map(obj -> BeanUtil.toBean(obj, Reply.class)).collect(Collectors.toList());
+        List<Reply> replies = ops.members(key).stream().map(obj -> JSONUtil.toBean(obj, Reply.class)).collect(Collectors.toList());
         if (replies != null && !replies.isEmpty()) {
             return Result.success(new PageResult(replies.size(), replies));
         }

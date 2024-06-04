@@ -40,10 +40,11 @@ public class CommonConstant {
     public static final String OSS_FORMAT_LRC = ".lrc";
 
     // 文件保存地址
-    public static final String LOCAL_SAVE_ADDRESS = "C:\\Desktop\\";
+    public static final String LOCAL_SAVE_ADDRESS = "C:\\c_h_music\\";
 
     // 歌单
     public static final String REDIS_COLLECTION_PLAYLIST = "收藏";
+    public static final String REDIS_DOWNLOAD_PLAYLIST = "下载";
     public static final String REDIS_PLAYLIST = "歌单";
 
     // 热门评论
@@ -52,4 +53,7 @@ public class CommonConstant {
 
     // 回复
     public static final String REDIS_REPLY_KEY = "reply:";
+
+    // 默认本地下载地址
+    public static final String DOWNLOAD_MUSIC_DIRECTORY = "C:\\c_h_music\\";
 }
