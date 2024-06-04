@@ -10,8 +10,6 @@ spring:
       minimum-idle: 5
       pool-name: MyAppHikariCP
       initialization-fail-timeout: 10000
-
-
   redis:
     host: 127.0.0.1
     port: 6379
@@ -23,6 +21,32 @@ spring:
         max-active: 8
         max-idle: 8
     database: 11
+  # 支持 swagger3
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+server:
+  address: 0.0.0.0
+  port: 8101
+  servlet:
+    context-path: /api
+    # cookie 30 天过期
+    session:
+      cookie:
+        max-age: 2592000
+# 接口文档配置
+knife4j:
+  enable: true
+  openapi:
+    title: "接口文档"
+    version: 1.0
+    group:
+      default:
+        api-rule: package
+        api-rule-resources:
+          - com.czh.chbackend.controller
+# http://localhost:8101/api/v2/api-docs
+# http://localhost:8101/api/doc.html#/home
 
 mybatis-plus:
   configuration:
