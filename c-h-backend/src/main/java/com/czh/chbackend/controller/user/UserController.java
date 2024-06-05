@@ -43,6 +43,7 @@ import static com.czh.chbackend.common.CommonConstant.*;
  */
 @RestController
 @RequestMapping("/user")
+@CrossOrigin(origins = "*") // 解决跨域问题
 @Slf4j
 public class UserController {
 
@@ -185,11 +186,11 @@ public class UserController {
     /**
      * 用户登录：验证码登录
      */
-    @GetMapping("/loginByCode")
+    @PostMapping("/loginByCode")
     public Result loginByCode(@RequestBody UserLoginRequest loginUser) {
         String loginCode = loginUser.getCode();
         String loginPhone = loginUser.getUserIphone();
-        if (loginUser == null || loginCode == null || loginPhone == null) {
+        if (loginCode == null || loginPhone == null) {
             return Result.error(PARAMS_ERROR, "电话或密码不能为空");
         }
         User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserIphone, loginPhone));
@@ -377,7 +378,6 @@ public class UserController {
         redisTemplate.delete(key);
         return Result.success();
     }
-
 
 
 }

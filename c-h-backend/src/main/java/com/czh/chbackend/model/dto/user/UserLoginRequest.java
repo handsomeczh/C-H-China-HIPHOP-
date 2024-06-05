@@ -20,10 +20,6 @@ public class UserLoginRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty("id")
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
-
     @ApiModelProperty("手机号")
     private String userIphone;
 

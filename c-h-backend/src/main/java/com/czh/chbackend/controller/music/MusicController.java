@@ -38,6 +38,7 @@ import static com.czh.chbackend.common.CommonConstant.*;
  */
 @RestController
 @RequestMapping("/music")
+@CrossOrigin(origins = "*") // 解决跨域问题
 public class MusicController {
 
     @Autowired
@@ -89,14 +90,14 @@ public class MusicController {
     }
 
     /**
-     *  下载音乐
+     * 下载音乐
      * todo 默认了下载路径，目前暂不支持自定义。默认路径：C:\c_h_music\
      */
     @PostMapping("/download/{id}")
     public Result download(@PathVariable Long id) {
         Music music = musicService.getById(id);
-        if(ObjectUtil.isEmpty(music)){
-            return Result.error(PARAMS_ERROR,"歌曲不存在");
+        if (ObjectUtil.isEmpty(music)) {
+            return Result.error(PARAMS_ERROR, "歌曲不存在");
         }
         // 从OSS下载歌曲
         try {
@@ -124,11 +125,18 @@ public class MusicController {
     }
 
     /**
-     * 根据歌名、歌手搜索音乐,没有时则全搜索,支持模糊搜索
+     * 根据歌名、歌手搜索音乐,
+     * todo 没有时不要全局搜索，可以显示热门歌单或者固定歌单
      * todo 可以实现缓存
      */
-    @GetMapping("/search")
-    public Result<PageResult> search(@RequestBody MusicSearchRequest request) {
+    @GetMapping("/music/search")
+    public Result<PageResult> search(
+            @RequestParam(required = false) String songName,
+            @RequestParam(required = false) String artist) {
+        MusicSearchRequest request = new MusicSearchRequest();
+        request.setSongName(songName);
+        request.setArtist(artist);
+
         return Result.success(musicService.getMusicList(request));
     }
 
@@ -239,8 +247,8 @@ public class MusicController {
      * todo 暂且不使用Redis缓存，必要性不高
      */
     @GetMapping("/downloaded")
-    public Result<List<DownloadMusicVo>> downloaded(String path){
-        if(StrUtil.isBlank(path)){
+    public Result<List<DownloadMusicVo>> downloaded(String path) {
+        if (StrUtil.isBlank(path)) {
             path = DOWNLOAD_MUSIC_DIRECTORY;
         }
         // 创建一个集合存储音乐文件路径 DownLoadMusicVo todo 为解决显示问题(图片，歌名等)
@@ -258,7 +266,7 @@ public class MusicController {
                 }
             }
         } else {
-            return Result.error(NOT_FOUND_ERROR,"本地文件C:\\c_h_music\\不存在！");
+            return Result.error(NOT_FOUND_ERROR, "本地文件C:\\c_h_music\\不存在！");
         }
         return Result.success(vos);
     }
@@ -267,7 +275,7 @@ public class MusicController {
      * todo 热歌推荐
      */
     @PostMapping("/hot")
-    public Result<List> hot(){
+    public Result<List> hot() {
         return Result.success();
     }
 
